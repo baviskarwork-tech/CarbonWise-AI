@@ -1,7 +1,12 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: 'standalone',
+  experimental: {
+    typedRoutes: false,
+  },
+  // Configure server-side components to allow Firebase connections
+  serverExternalPackages: ['firebase-admin'],
 };
 
 export default nextConfig;
