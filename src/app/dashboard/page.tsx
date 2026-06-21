@@ -15,7 +15,11 @@ import {
   Loader2, 
   CheckSquare, 
   Square,
-  Sparkles
+  Sparkles,
+  Car,
+  Zap,
+  ChefHat,
+  Trash2
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -209,20 +213,37 @@ function DashboardView() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
           {Object.entries(latestFootprint.breakdown).map(([category, amount]) => {
             const pct = Math.round((amount / latestFootprint.totalEmissions) * 100) || 0;
+            
+            // Premium category metadata mapping
+            const meta: Record<string, { color: string; icon: any; label: string }> = {
+              transport: { color: 'bg-cyan-500', icon: Car, label: 'Transport' },
+              energy: { color: 'bg-amber-500', icon: Zap, label: 'Utilities' },
+              food: { color: 'bg-emerald-500', icon: ChefHat, label: 'Diet & Food' },
+              waste: { color: 'bg-rose-500', icon: Trash2, label: 'Waste Index' }
+            };
+            
+            const currentMeta = meta[category] || { color: 'bg-brand-500', icon: Leaf, label: category };
+            const Icon = currentMeta.icon;
+            
             return (
-              <div key={category} className="rounded-lg bg-dark-card border border-dark-border p-4">
-                <span className="text-xs font-semibold uppercase text-gray-400 capitalize">{category}</span>
-                <p className="text-2xl font-extrabold text-white mt-1.5">{formatCarbon(amount)}</p>
-                <div className="mt-2.5 w-full bg-dark-border h-1.5 rounded-full overflow-hidden">
+              <div key={category} className="rounded-lg bg-dark-card border border-dark-border p-4 flex flex-col gap-2">
+                <div className="flex justify-between items-center text-xs font-semibold text-gray-400">
+                  <span className="uppercase tracking-wider flex items-center gap-1.5">
+                    <Icon className="h-4 w-4 text-gray-300" />
+                    {currentMeta.label}
+                  </span>
+                  <span>{pct}%</span>
+                </div>
+                <p className="text-2xl font-extrabold text-white">{formatCarbon(amount)}</p>
+                <div className="w-full bg-dark-border h-1.5 rounded-full overflow-hidden">
                   <div 
-                    className="bg-brand-500 h-full rounded-full" 
+                    className={`h-full rounded-full ${currentMeta.color}`} 
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <div className="mt-1 flex justify-between text-[10px] text-gray-500">
-                  <span>Share</span>
-                  <span>{pct}%</span>
-                </div>
+                <span className="text-[10px] text-gray-500 font-mono">
+                  Annualized impact share
+                </span>
               </div>
             );
           })}

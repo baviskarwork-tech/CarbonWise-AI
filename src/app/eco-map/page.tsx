@@ -241,7 +241,7 @@ function EcoMapView() {
                     </div>
                     <button
                       className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-[10px] font-bold text-white hover:bg-brand-500 transition-colors"
-                      onClick={() => alert(`Starting navigation route to ${selectedLoc.address}...`)}
+                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedLoc.name + ', ' + selectedLoc.address)}`, '_blank')}
                     >
                       Directions
                     </button>
