@@ -4,10 +4,11 @@ import type { NextRequest } from 'next/server';
 export function middleware(_request: NextRequest) {
   const cspHeader = [
     "default-src 'self';",
-    "script-src 'self' https://www.googletagmanager.com;",
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;",
     "style-src 'self' 'unsafe-inline';",
     "img-src 'self' data: https:;",
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com;",
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com wss://*.googleapis.com;",
+    "frame-src 'self' https://*.firebaseapp.com;",
     "frame-ancestors 'none';",
     "base-uri 'self';",
     "form-action 'self';"

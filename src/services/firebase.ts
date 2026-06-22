@@ -7,7 +7,7 @@ import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, 
 import { UserProfile, CarbonFootprint, Goal, WeeklyPlan, Achievement, BadgeId } from '../types';
 import { calculateSustainabilityScore } from '../utils/score';
 
-const isSimulation = process.env.NEXT_PUBLIC_SIMULATION_MODE === 'true' || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+let isSimulation = process.env.NEXT_PUBLIC_SIMULATION_MODE === 'true' || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 // Real Firebase initialization configuration
 const firebaseConfig = {
@@ -39,6 +39,7 @@ if (!isSimulation) {
     db = getFirestore(app);
   } catch (error: unknown) {
     console.warn("Failed to initialize Firebase, switching to Simulation Mode.", error);
+    isSimulation = true;
   }
 }
 
@@ -119,7 +120,9 @@ const MOCK_STORAGE = {
 };
 
 export const authService = {
-  isSimulation,
+  get isSimulation() {
+    return isSimulation;
+  },
   
   onAuthStateChange: (callback: (user: UserProfile | null) => void) => {
     if (isSimulation) {
