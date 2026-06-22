@@ -46,16 +46,18 @@ export const Benchmarking: React.FC<BenchmarkingProps> = React.memo(({ totalEmis
 
       {/* Region Picker Selector */}
       <div className="flex items-center justify-between text-xs bg-dark-card border border-dark-border rounded-lg p-2.5">
-        <span className="text-gray-300 font-semibold flex items-center gap-1.5">
-          <MapPin className="h-4 w-4 text-brand-500" />
+        <span className="text-gray-300 font-semibold flex items-center gap-1.5" id="region-selector-label">
+          <MapPin className="h-4 w-4 text-brand-500" aria-hidden="true" />
           Compare Region
         </span>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5" role="group" aria-labelledby="region-selector-label">
           {regionChoices.map((reg) => (
             <button
               key={reg}
               type="button"
               onClick={() => setSelectedRegion(reg)}
+              aria-pressed={selectedRegion === reg}
+              aria-label={`Compare against ${reg} average`}
               className={`px-3 py-1 text-[10px] font-bold rounded transition-all ${
                 selectedRegion === reg
                   ? 'bg-brand-600 border border-brand-500 text-white shadow-lg'
@@ -113,7 +115,14 @@ export const Benchmarking: React.FC<BenchmarkingProps> = React.memo(({ totalEmis
               <span className="text-gray-200">Your Current Emissions</span>
               <span className="text-white font-bold">{formatCarbon(totalEmissionsKg)}</span>
             </div>
-            <div className="w-full bg-dark-border h-2 rounded-full overflow-hidden">
+            <div
+              className="w-full bg-dark-border h-2 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={Math.min(100, Math.round((totalEmissionsKg / maxVal) * 100))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Your emissions: ${formatCarbon(totalEmissionsKg)}`}
+            >
               <div 
                 className="h-full rounded-full bg-brand-500 transition-all duration-500" 
                 style={{ width: `${Math.min(100, (totalEmissionsKg / maxVal) * 100)}%` }}
@@ -127,7 +136,14 @@ export const Benchmarking: React.FC<BenchmarkingProps> = React.memo(({ totalEmis
               <span className="text-gray-400">India Average Baseline</span>
               <span className="text-gray-300 font-bold">{formatCarbon(data.indiaAverage)}</span>
             </div>
-            <div className="w-full bg-dark-border h-2 rounded-full overflow-hidden">
+            <div
+              className="w-full bg-dark-border h-2 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={Math.min(100, Math.round((data.indiaAverage / maxVal) * 100))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`India average: ${formatCarbon(data.indiaAverage)}`}
+            >
               <div 
                 className="h-full rounded-full bg-amber-500 transition-all duration-500" 
                 style={{ width: `${Math.min(100, (data.indiaAverage / maxVal) * 100)}%` }}
@@ -141,7 +157,14 @@ export const Benchmarking: React.FC<BenchmarkingProps> = React.memo(({ totalEmis
               <span className="text-gray-400">Global Average Baseline</span>
               <span className="text-gray-300 font-bold">{formatCarbon(data.globalAverage)}</span>
             </div>
-            <div className="w-full bg-dark-border h-2 rounded-full overflow-hidden">
+            <div
+              className="w-full bg-dark-border h-2 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={Math.min(100, Math.round((data.globalAverage / maxVal) * 100))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Global average: ${formatCarbon(data.globalAverage)}`}
+            >
               <div 
                 className="h-full rounded-full bg-cyan-600 transition-all duration-500" 
                 style={{ width: `${Math.min(100, (data.globalAverage / maxVal) * 100)}%` }}
@@ -156,7 +179,14 @@ export const Benchmarking: React.FC<BenchmarkingProps> = React.memo(({ totalEmis
                 <span className="text-gray-400">{selectedRegion} Average Baseline</span>
                 <span className="text-gray-300 font-bold">{formatCarbon(data.regionalAverage)}</span>
               </div>
-              <div className="w-full bg-dark-border h-2 rounded-full overflow-hidden">
+              <div
+                className="w-full bg-dark-border h-2 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-valuenow={Math.min(100, Math.round((data.regionalAverage / maxVal) * 100))}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${selectedRegion} average: ${formatCarbon(data.regionalAverage)}`}
+              >
                 <div 
                   className="h-full rounded-full bg-slate-500 transition-all duration-500" 
                   style={{ width: `${Math.min(100, (data.regionalAverage / maxVal) * 100)}%` }}

@@ -111,8 +111,8 @@ function DashboardView() {
 
   if (dataLoading) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4" role="status" aria-label="Loading dashboard data">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-500" aria-hidden="true" />
         <p className="text-sm font-medium text-gray-400">Loading audit profile...</p>
       </div>
     );
@@ -166,11 +166,13 @@ function DashboardView() {
       </div>
 
       {/* Tabs Sub-Navigation */}
-      <div className="flex border-b border-dark-border gap-6 text-sm font-bold w-full" role="tablist">
+      <div className="flex border-b border-dark-border gap-6 text-sm font-bold w-full" role="tablist" aria-label="Dashboard sections">
         <button
           type="button"
+          id="tab-intelligence"
           role="tab"
           aria-selected={activeTab === 'intelligence'}
+          aria-controls="tabpanel-intelligence"
           onClick={() => setActiveTab('intelligence')}
           className={`pb-3 border-b-2 px-1 transition-all flex items-center gap-2 ${
             activeTab === 'intelligence'
@@ -178,13 +180,15 @@ function DashboardView() {
               : 'border-transparent text-gray-400 hover:text-white'
           }`}
         >
-          <Brain className="h-4 w-4" />
+          <Brain className="h-4 w-4" aria-hidden="true" />
           Carbon Intelligence Center
         </button>
         <button
           type="button"
+          id="tab-breakdown"
           role="tab"
           aria-selected={activeTab === 'breakdown'}
+          aria-controls="tabpanel-breakdown"
           onClick={() => setActiveTab('breakdown')}
           className={`pb-3 border-b-2 px-1 transition-all flex items-center gap-2 ${
             activeTab === 'breakdown'
@@ -192,13 +196,15 @@ function DashboardView() {
               : 'border-transparent text-gray-400 hover:text-white'
           }`}
         >
-          <TrendingDown className="h-4 w-4" />
+          <TrendingDown className="h-4 w-4" aria-hidden="true" />
           Emissions Sectors
         </button>
         <button
           type="button"
+          id="tab-actions"
           role="tab"
           aria-selected={activeTab === 'actions'}
+          aria-controls="tabpanel-actions"
           onClick={() => setActiveTab('actions')}
           className={`pb-3 border-b-2 px-1 transition-all flex items-center gap-2 ${
             activeTab === 'actions'
@@ -206,21 +212,31 @@ function DashboardView() {
               : 'border-transparent text-gray-400 hover:text-white'
           }`}
         >
-          <CalendarCheck className="h-4 w-4" />
-          Actions & Badges
+          <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+          Actions &amp; Badges
         </button>
       </div>
 
       {/* -------------------- TAB 1: CARBON INTELLIGENCE CENTER -------------------- */}
       {activeTab === 'intelligence' && (
-        <div className="flex flex-col gap-8 w-full animate-fadeIn">
+        <div
+          id="tabpanel-intelligence"
+          role="tabpanel"
+          aria-labelledby="tab-intelligence"
+          tabIndex={0}
+          className="flex flex-col gap-8 w-full animate-fadeIn outline-none"
+        >
           {/* Top Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
             {/* Carbon Score Card */}
             <div className="glass-panel border border-dark-border rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-lg">
               <h2 className="text-sm font-semibold text-gray-300 mb-4">Carbon Score</h2>
-              <div className="relative flex items-center justify-center h-36 w-36">
-                <svg className="h-full w-full -rotate-90">
+              <div
+                className="relative flex items-center justify-center h-36 w-36"
+                role="img"
+                aria-label={`Carbon sustainability score: ${scoreObj.score} out of 100, Grade: ${scoreObj.grade}`}
+              >
+                <svg className="h-full w-full -rotate-90" aria-hidden="true">
                   <circle
                     cx="72"
                     cy="72"
@@ -239,7 +255,7 @@ function DashboardView() {
                     strokeLinecap="round"
                   />
                 </svg>
-                <div className="absolute flex flex-col items-center">
+                <div className="absolute flex flex-col items-center" aria-hidden="true">
                   <span className="text-3xl font-extrabold text-white">{scoreObj.score}</span>
                   <span className="text-[10px] uppercase text-gray-400 font-bold">Points</span>
                 </div>
@@ -318,7 +334,14 @@ function DashboardView() {
               <div className="w-full mt-2">
                 {/* SVG Visualizing the Trend Chart */}
                 <div className="relative h-48 w-full bg-dark-card/50 border border-dark-border/40 rounded-lg p-4 flex items-end">
-                  <svg className="absolute inset-x-0 bottom-4 h-36 w-full px-8" viewBox="0 0 500 100" preserveAspectRatio="none">
+                  <svg
+                    className="absolute inset-x-0 bottom-4 h-36 w-full px-8"
+                    viewBox="0 0 500 100"
+                    preserveAspectRatio="none"
+                    role="img"
+                    aria-labelledby="forecast-chart-title"
+                  >
+                    <title id="forecast-chart-title">12-month emissions forecast chart comparing Business-as-Usual with Net-Zero Program Path</title>
                     {/* Gridlines */}
                     <line x1="0" y1="20" x2="500" y2="20" className="stroke-dark-border/30" strokeWidth="0.5" />
                     <line x1="0" y1="50" x2="500" y2="50" className="stroke-dark-border/30" strokeWidth="0.5" />
@@ -396,7 +419,13 @@ function DashboardView() {
 
       {/* -------------------- TAB 2: SECTORS BREAKDOWN -------------------- */}
       {activeTab === 'breakdown' && (
-        <div className="flex flex-col gap-6 w-full animate-fadeIn">
+        <div
+          id="tabpanel-breakdown"
+          role="tabpanel"
+          aria-labelledby="tab-breakdown"
+          tabIndex={0}
+          className="flex flex-col gap-6 w-full animate-fadeIn outline-none"
+        >
           <div className="glass-panel border border-dark-border rounded-xl p-6 shadow-lg w-full">
             <h2 className="text-lg font-bold text-white mb-6">Emissions Sector Breakdown</h2>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 w-full">
@@ -442,7 +471,13 @@ function DashboardView() {
 
       {/* -------------------- TAB 3: ACTIONS & BADGES -------------------- */}
       {activeTab === 'actions' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full animate-fadeIn">
+        <div
+          id="tabpanel-actions"
+          role="tabpanel"
+          aria-labelledby="tab-actions"
+          tabIndex={0}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full animate-fadeIn outline-none"
+        >
           {/* Gemini Weekly Plan */}
           <div className="glass-panel border border-dark-border rounded-xl p-6 shadow-lg flex flex-col justify-between">
             <div>
@@ -502,6 +537,9 @@ function DashboardView() {
                             <button
                               key={task.id}
                               onClick={() => toggleTaskCompletion(week.weekNumber, task.id, !isDone)}
+                              aria-checked={isDone}
+                              aria-label={`${isDone ? 'Completed' : 'Mark as done'}: ${task.action}`}
+                              role="checkbox"
                               className="flex items-start gap-2.5 text-left w-full hover:bg-dark-border/20 p-1.5 rounded transition-colors"
                             >
                               {isDone ? (

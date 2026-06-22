@@ -172,7 +172,7 @@ function CoachView() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 w-full">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 w-full" role="tablist" aria-label="Select coaching mode">
         {coachModesList.map((item) => {
           const Icon = item.icon;
           const isActive = selectedMode === item.mode;
@@ -180,15 +180,17 @@ function CoachView() {
             <button
               key={item.mode}
               type="button"
+              role="tab"
               onClick={() => setSelectedMode(item.mode)}
+              aria-selected={isActive}
+              aria-label={`Switch to ${item.label}`}
               className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
                 isActive 
                   ? 'bg-brand-600 border-brand-500 text-white shadow-lg shadow-brand-600/25'
                   : 'bg-dark-card border-dark-border text-gray-400 hover:text-white hover:bg-slate-800'
               }`}
-              aria-label={`Switch to ${item.label}`}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -196,7 +198,13 @@ function CoachView() {
       </div>
 
       <div className="flex-grow flex flex-col border border-dark-border bg-dark-card rounded-2xl overflow-hidden shadow-2xl min-h-0">
-        <div className="flex-grow overflow-y-auto p-4 md:p-6 flex flex-col gap-4">
+        <div
+          className="flex-grow overflow-y-auto p-4 md:p-6 flex flex-col gap-4"
+          role="log"
+          aria-live="polite"
+          aria-label="AI Coach conversation"
+          aria-busy={sending}
+        >
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -208,15 +216,18 @@ function CoachView() {
                 msg.sender === 'user' 
                   ? 'bg-dark-border border-dark-border text-gray-300'
                   : 'bg-brand-950/40 border-brand-500/25 text-brand-500'
-              }`}>
+              }`} aria-hidden="true">
                 {msg.sender === 'user' ? 'U' : <Leaf className="h-4.5 w-4.5" />}
               </div>
 
-              <div className={`rounded-xl px-4 py-2.5 text-xs md:text-sm leading-relaxed ${
-                msg.sender === 'user'
-                  ? 'bg-brand-600 text-white rounded-tr-none'
-                  : 'bg-slate-900 border border-dark-border text-gray-200 rounded-tl-none'
-              }`}>
+              <div
+                className={`rounded-xl px-4 py-2.5 text-xs md:text-sm leading-relaxed ${
+                  msg.sender === 'user'
+                    ? 'bg-brand-600 text-white rounded-tr-none'
+                    : 'bg-slate-900 border border-dark-border text-gray-200 rounded-tl-none'
+                }`}
+                aria-label={msg.sender === 'user' ? 'Your message' : 'Coach response'}
+              >
                 <p className="whitespace-pre-wrap">{msg.text}</p>
 
                 {msg.recommendations && msg.recommendations.length > 0 && (
@@ -254,8 +265,8 @@ function CoachView() {
           ))}
 
           {sending && (
-            <div className="flex items-start gap-3 self-start">
-              <div className="h-8 w-8 rounded-full bg-brand-950/40 border border-brand-500/25 text-brand-500 flex items-center justify-center animate-spin">
+            <div className="flex items-start gap-3 self-start" role="status" aria-label="AI Coach is responding">
+              <div className="h-8 w-8 rounded-full bg-brand-950/40 border border-brand-500/25 text-brand-500 flex items-center justify-center animate-spin" aria-hidden="true">
                 <Loader2 className="h-4.5 w-4.5" />
               </div>
               <div className="rounded-xl px-4 py-2.5 text-xs bg-slate-900 border border-dark-border text-gray-400 flex items-center gap-1">
@@ -284,12 +295,15 @@ function CoachView() {
           className="border-t border-dark-border p-4 bg-dark-bg flex gap-2"
         >
           <input
+            id="coach-input"
             type="text"
             placeholder={`Ask your ${selectedMode.replace('_', ' ')} coach anything about carbon offsets...`}
             className="flex-grow rounded-lg border border-dark-border bg-dark-card px-4 py-2 text-sm text-white focus:border-brand-500 focus:outline-none"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={sending}
+            aria-label="Ask the AI coach a question"
+            aria-disabled={sending}
           />
           <button
             type="submit"

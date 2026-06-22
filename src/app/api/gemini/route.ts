@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     
     if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'Invalid request payload', details: parseResult.error.issues },
+        { error: 'Invalid request' },
         { status: 400 }
       );
     }

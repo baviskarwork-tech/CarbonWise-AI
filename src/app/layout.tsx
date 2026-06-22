@@ -22,7 +22,7 @@ export default function RootLayout({
           href="#main-content" 
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 bg-brand-600 text-white px-4 py-2 rounded-lg font-bold outline-none"
         >
-          Skip to main content
+          Skip to content
         </a>
         <WebVitals />
         <Navbar />

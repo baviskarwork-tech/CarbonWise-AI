@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useCarbonStore } from '../store/useCarbonStore';
 import { X, Mail, Lock, User, Loader2, ShieldCheck } from 'lucide-react';
 import { UserRegisterSchema, UserLoginSchema } from '../utils/validation';
@@ -21,22 +21,46 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [submitError, setSubmitError] = useState('');
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement>(null);
 
-  // Close on ESC key press
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+  // Focus trap: keep focus inside modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!isOpen || !modalRef.current) return;
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
       }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   }, [isOpen, onClose]);
 
-  // Prevent background scrolling when open
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  // Auto-focus first element and prevent background scrolling
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      // Defer focus to after render
+      const t = setTimeout(() => firstFocusableRef.current?.focus(), 50);
+      return () => clearTimeout(t);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -108,6 +132,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
+      aria-describedby="auth-modal-desc"
     >
       <div 
         ref={modalRef}
@@ -115,6 +140,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       >
         {/* Close Button */}
         <button
+          ref={firstFocusableRef}
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-400 hover:text-white transition-colors"
           aria-label="Close Authentication dialog"
@@ -127,14 +153,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <h2 id="auth-modal-title" className="text-2xl font-bold text-white">
             {isSignUp ? 'Join CarbonWise AI' : 'Welcome Back'}
           </h2>
-          <p className="mt-1 text-sm text-gray-400">
+          <p id="auth-modal-desc" className="mt-1 text-sm text-gray-400">
             {isSignUp ? 'Start tracking your path to Net Zero' : 'Access your personalized insights'}
           </p>
         </div>
 
         {/* Global Error Alerts */}
         {(submitError || authError) && (
-          <div className="mb-4 rounded-md bg-rose-950/50 border border-rose-500/30 p-3 text-xs text-rose-400" role="alert">
+          <div
+            className="mb-4 rounded-md bg-rose-950/50 border border-rose-500/30 p-3 text-xs text-rose-400"
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+          >
             {submitError || authError}
           </div>
         )}
@@ -178,18 +209,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1" htmlFor="auth-name">Name</label>
               <div className="relative">
-                <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-500" />
+                <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-500" aria-hidden="true" />
                 <input
                   id="auth-name"
                   type="text"
                   placeholder="John Doe"
+                  autoComplete="name"
+                  required
+                  aria-required="true"
+                  aria-invalid={!!validationErrors.displayName}
+                  aria-describedby={validationErrors.displayName ? 'auth-name-error' : undefined}
                   className="w-full rounded-lg border border-dark-border bg-dark-card py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
               </div>
               {validationErrors.displayName && (
-                <span className="mt-1 text-xs text-rose-400">{validationErrors.displayName}</span>
+                <span id="auth-name-error" role="alert" className="mt-1 text-xs text-rose-400">{validationErrors.displayName}</span>
               )}
             </div>
           )}
@@ -197,36 +233,46 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1" htmlFor="auth-email">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-500" />
+              <Mail className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-500" aria-hidden="true" />
               <input
                 id="auth-email"
                 type="email"
                 placeholder="you@example.com"
+                autoComplete="email"
+                required
+                aria-required="true"
+                aria-invalid={!!validationErrors.email}
+                aria-describedby={validationErrors.email ? 'auth-email-error' : undefined}
                 className="w-full rounded-lg border border-dark-border bg-dark-card py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             {validationErrors.email && (
-              <span className="mt-1 text-xs text-rose-400">{validationErrors.email}</span>
+              <span id="auth-email-error" role="alert" className="mt-1 text-xs text-rose-400">{validationErrors.email}</span>
             )}
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1" htmlFor="auth-password">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-500" />
+              <Lock className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-500" aria-hidden="true" />
               <input
                 id="auth-password"
                 type="password"
                 placeholder="••••••••"
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                required
+                aria-required="true"
+                aria-invalid={!!validationErrors.password}
+                aria-describedby={validationErrors.password ? 'auth-password-error' : undefined}
                 className="w-full rounded-lg border border-dark-border bg-dark-card py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             {validationErrors.password && (
-              <span className="mt-1 text-xs text-rose-400">{validationErrors.password}</span>
+              <span id="auth-password-error" role="alert" className="mt-1 text-xs text-rose-400">{validationErrors.password}</span>
             )}
           </div>
 
