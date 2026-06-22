@@ -65,12 +65,14 @@ export const GlobalImpact: React.FC<GlobalImpactProps> = React.memo(({ annualSav
         />
 
         {/* Quick presets */}
-        <div className="grid grid-cols-4 gap-2 mt-1">
+        <div className="grid grid-cols-4 gap-2 mt-1" role="group" aria-label="Participant count presets">
           {presetScales.map((scale) => (
             <button
               key={scale.label}
               type="button"
               onClick={() => setMultiplier(scale.value)}
+              aria-pressed={multiplier === scale.value}
+              aria-label={`Simulate with ${scale.label}`}
               className={`py-1 text-[10px] font-bold rounded border transition-all ${
                 multiplier === scale.value
                   ? 'bg-brand-600 border-brand-500 text-white shadow-lg'
@@ -84,46 +86,46 @@ export const GlobalImpact: React.FC<GlobalImpactProps> = React.memo(({ annualSav
       </div>
 
       {/* Simulation Results grid */}
-      <div className="grid grid-cols-2 gap-4 mt-2">
-        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">
+      <div className="grid grid-cols-2 gap-4 mt-2" aria-label="Simulation results">
+        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1" aria-label={`CO2 Saved: ${impact.co2SavedTons.toLocaleString()} tons`}>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-cyan-400">
-            <Leaf className="h-4 w-4 shrink-0" />
+            <Leaf className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>CO₂ Saved</span>
           </div>
-          <p className="text-xl font-extrabold text-white mt-1">
+          <p className="text-xl font-extrabold text-white mt-1" aria-hidden="true">
             {impact.co2SavedTons.toLocaleString()} Tons
           </p>
           <span className="text-[9px] text-gray-500">annual greenhouse gas emissions avoided</span>
         </div>
 
-        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">
+        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1" aria-label={`Trees Equivalent: ${impact.treesPlanted.toLocaleString()} saplings`}>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-            <Leaf className="h-4 w-4 shrink-0" />
+            <Leaf className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>Trees Equivalent</span>
           </div>
-          <p className="text-xl font-extrabold text-white mt-1">
+          <p className="text-xl font-extrabold text-white mt-1" aria-hidden="true">
             {impact.treesPlanted.toLocaleString()} Saplings
           </p>
           <span className="text-[9px] text-gray-500">grown for 10 years to absorb equivalent offset</span>
         </div>
 
-        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">
+        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1" aria-label={`Cars Removed: ${impact.carsRemovedYearly.toLocaleString()} cars`}>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
-            <Car className="h-4 w-4 shrink-0" />
+            <Car className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>Cars Removed</span>
           </div>
-          <p className="text-xl font-extrabold text-white mt-1">
+          <p className="text-xl font-extrabold text-white mt-1" aria-hidden="true">
             {impact.carsRemovedYearly.toLocaleString()} cars
           </p>
           <span className="text-[9px] text-gray-500">equivalent passenger vehicles removed/year</span>
         </div>
 
-        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">
+        <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1" aria-label={`Homes Powered: ${impact.homesPoweredYearly.toLocaleString()} homes`}>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
-            <Home className="h-4 w-4 shrink-0" />
+            <Home className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>Homes Powered</span>
           </div>
-          <p className="text-xl font-extrabold text-white mt-1">
+          <p className="text-xl font-extrabold text-white mt-1" aria-hidden="true">
             {impact.homesPoweredYearly.toLocaleString()} homes
           </p>
           <span className="text-[9px] text-gray-500">offsetting annual electricity consumption</span>

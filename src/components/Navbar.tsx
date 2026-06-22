@@ -97,15 +97,21 @@ export default function Navbar() {
         <button
           className="flex p-1.5 text-gray-300 hover:text-white lg:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle Navigation Menu"
+          aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-nav-drawer"
         >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {mobileMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
         </button>
       </div>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="absolute left-0 top-[60px] w-full bg-dark-bg border-b border-dark-border py-4 px-6 flex flex-col gap-4 lg:hidden animate-fade-in">
+        <nav
+          id="mobile-nav-drawer"
+          aria-label="Mobile Navigation"
+          className="absolute left-0 top-[60px] w-full bg-dark-bg border-b border-dark-border py-4 px-6 flex flex-col gap-4 lg:hidden animate-fade-in"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -145,7 +151,7 @@ export default function Navbar() {
               </button>
             )}
           </div>
-        </div>
+        </nav>
       )}
 
       {/* Auth Popup modal */}
