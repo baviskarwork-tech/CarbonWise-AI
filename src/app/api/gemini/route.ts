@@ -4,7 +4,8 @@ import { z } from 'zod';
 // Zod Input Verification Schema
 const GeminiRequestSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
-  type: z.enum(['chat', 'plan', 'analysis']).optional().default('chat'),
+  type: z.enum(['chat', 'plan', 'analysis', 'coach_structured']).optional().default('chat'),
+  mode: z.enum(['lifestyle', 'food', 'energy', 'travel', 'net_zero']).optional(),
   footprintData: z.record(z.string(), z.number()).optional().nullable(),
 });
 
@@ -32,6 +33,11 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function POST(request: Request) {
+  let prompt = '';
+  let type = 'chat';
+  let mode: string | undefined = undefined;
+  let footprintData: Record<string, number> | null | undefined = null;
+
   try {
     // 1. Rate Limiting Check
     const ip = request.headers.get('x-forwarded-for') || 'anonymous';
@@ -53,12 +59,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const { prompt, type, footprintData } = parseResult.data;
+    const data = parseResult.data;
+    prompt = data.prompt;
+    type = data.type;
+    mode = data.mode;
+    footprintData = data.footprintData;
+
     const apiKey = process.env.GEMINI_API_KEY;
     const isSimulation = process.env.NEXT_PUBLIC_SIMULATION_MODE === 'true' || !apiKey || apiKey === 'mock_gemini_api_key';
 
     if (isSimulation) {
-      return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData));
+      return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData, mode));
     }
 
     // Call real Gemini API
@@ -73,6 +84,9 @@ export async function POST(request: Request) {
       responseMimeType = "application/json";
     } else if (type === 'analysis') {
       systemContext += "Analyze the user's carbon footprint breakdown and provide a detailed analysis of major contributors and structural recommendations in JSON. Schema: { analysis: string, priorityArea: string, potentialSavings: number }. Your analysis must explain exactly why the contributor is high, provide concrete, numbered recommendations, and suggest local actions (like switching utilities, EV conversions, or composting).";
+      responseMimeType = "application/json";
+    } else if (type === 'coach_structured') {
+      systemContext += `You are a specialized ${mode || 'lifestyle'} sustainability coach. Your job is to return a structured JSON response analyzing the user's request and carbon footprint. The response MUST follow this exact JSON schema: { "text": "Motivating detailed response text...", "recommendations": [ { "action": "Specific recommendation matching the selected mode", "savings": number (annual savings in kg CO2e), "difficulty": "Easy"|"Medium"|"Hard", "timeframe": "Immediate"|"1 week"|"1 month"|"6 months" } ] }. Return ONLY the JSON object. Do not include markdown wraps.`;
       responseMimeType = "application/json";
     } else {
       systemContext += "Respond to user questions regarding sustainability, energy savings, eco-friendly transport, diets, and waste reduction. Be extremely motivating, supportive, and provide estimated carbon savings where possible. Refer back to their carbon breakdown statistics if available to make your answers personalized and contextualized.";
@@ -103,22 +117,32 @@ export async function POST(request: Request) {
       throw new Error(`Gemini API returned error: ${apiResponse.status} - ${errorText}`);
     }
 
-    const data = await apiResponse.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const jsonResponse = await apiResponse.json();
+    const rawText = jsonResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    if (type === 'plan' || type === 'analysis') {
+    if (type === 'plan' || type === 'analysis' || type === 'coach_structured') {
       try {
-        const jsonParsed = JSON.parse(rawText.trim());
+        let cleaned = rawText.trim();
+        if (cleaned.startsWith('```json')) {
+          cleaned = cleaned.substring(7);
+        }
+        if (cleaned.endsWith('```')) {
+          cleaned = cleaned.substring(0, cleaned.length - 3);
+        }
+        const jsonParsed = JSON.parse(cleaned.trim());
         return NextResponse.json(jsonParsed);
       } catch (err) {
         console.error("Gemini failed to output valid JSON. Output was:", rawText, err);
-        return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData));
+        return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData, mode));
       }
     }
 
     return NextResponse.json({ text: rawText });
   } catch (error: unknown) {
     console.error("Error in Gemini API route:", error);
+    if (type === 'plan' || type === 'analysis' || type === 'coach_structured') {
+      return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData, mode));
+    }
     const errorMessage = error instanceof Error ? error.message : 'An error occurred during AI processing';
     return NextResponse.json(
       { error: errorMessage },
@@ -133,12 +157,111 @@ export async function POST(request: Request) {
 function generateMockGeminiResponse(
   type: string, 
   prompt: string, 
-  footprintData: Record<string, number> | null | undefined
+  footprintData: Record<string, number> | null | undefined,
+  mode?: string
 ) {
   const transportEmissions = footprintData?.transport || 5200;
   const energyEmissions = footprintData?.energy || 4500;
   const foodEmissions = footprintData?.food || 3500;
   const wasteEmissions = footprintData?.waste || 2800;
+
+  if (type === 'coach_structured') {
+    const activeMode = mode || 'lifestyle';
+    if (activeMode === 'food') {
+      return {
+        text: "Dietary habits heavily impact emissions. Prioritizing organic and low-impact proteins generates significant carbon offsets:",
+        recommendations: [
+          {
+            action: "Adopt meat-free lunches on weekdays (incorporate lentils, beans, and grains)",
+            savings: Math.round((foodEmissions * 0.12) / 4),
+            difficulty: "Easy",
+            timeframe: "1 week"
+          },
+          {
+            action: "Select oat or almond milk replacements instead of dairy milk",
+            savings: Math.round((foodEmissions * 0.05) / 4),
+            difficulty: "Easy",
+            timeframe: "Immediate"
+          }
+        ]
+      };
+    }
+    if (activeMode === 'energy') {
+      return {
+        text: "Household energy efficiency reduces both emissions and utility costs immediately:",
+        recommendations: [
+          {
+            action: "Audit household appliances and unplug vampire loads during sleeping hours",
+            savings: Math.round((energyEmissions * 0.03) / 4),
+            difficulty: "Easy",
+            timeframe: "Immediate"
+          },
+          {
+            action: "Adjust smart thermostat heating controls down by 2°F during winter peak months",
+            savings: Math.round((energyEmissions * 0.07) / 4),
+            difficulty: "Medium",
+            timeframe: "Immediate"
+          }
+        ]
+      };
+    }
+    if (activeMode === 'travel') {
+      return {
+        text: "Automobile and flight emissions are the largest components of modern carbon footprints:",
+        recommendations: [
+          {
+            action: "Transition to train or electric bus commuting for trips exceeding 5 miles",
+            savings: Math.round((transportEmissions * 0.08) / 4),
+            difficulty: "Medium",
+            timeframe: "1 month"
+          },
+          {
+            action: "Replace a solo drive commute with public transit or walking twice per week",
+            savings: Math.round((transportEmissions * 0.12) / 4),
+            difficulty: "Medium",
+            timeframe: "1 week"
+          }
+        ]
+      };
+    }
+    if (activeMode === 'net_zero') {
+      return {
+        text: "Building a personal Net-Zero path requires systemic changes to household and daily operations:",
+        recommendations: [
+          {
+            action: "Configure home water heater tank temperature settings strictly down to 120°F",
+            savings: Math.round((energyEmissions * 0.05) / 4),
+            difficulty: "Easy",
+            timeframe: "Immediate"
+          },
+          {
+            action: "Swap five highly active incandescent lighting fixtures for energy saver LEDs",
+            savings: Math.round((energyEmissions * 0.05) / 4),
+            difficulty: "Easy",
+            timeframe: "Immediate"
+          }
+        ]
+      };
+    }
+    // Default lifestyle
+    return {
+      text: "Transforming your general lifestyle through circular consumption and waste reduction helps achieve sustainability targets:",
+      recommendations: [
+        {
+          action: "Introduce kitchen organic composting bins to divert organic scraps from landfills",
+          savings: Math.round((wasteEmissions * 0.25) / 4),
+          difficulty: "Easy",
+          timeframe: "Immediate"
+        },
+        {
+          action: "Refuse single-use coffee cups and purchase products in bulk packaging",
+          savings: 40,
+          difficulty: "Easy",
+          timeframe: "Immediate"
+        }
+      ]
+    };
+  }
 
   if (type === 'plan') {
     return {

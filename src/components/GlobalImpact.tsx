@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { simulateGlobalImpact } from '../engine/carbonEngine';
-import { Users, Leaf, ShieldAlert, Home, Sparkles } from 'lucide-react';
+import { Users, Leaf, Car, Home, Sparkles } from 'lucide-react';
 
 interface GlobalImpactProps {
   annualSavingsKg: number;
@@ -13,7 +13,7 @@ interface GlobalImpactProps {
  * Scales single-user annual savings to estimate community, city, or global offsets.
  */
 export const GlobalImpact: React.FC<GlobalImpactProps> = React.memo(({ annualSavingsKg }) => {
-  const [multiplier, setMultiplier] = useState(10000); // Default community scale: 10,000 users
+  const [multiplier, setMultiplier] = useState(10000); // Default scale: 10,000 users
 
   // Calculate scaled outcomes using the central Carbon Engine
   const impact = useMemo(() => {
@@ -21,14 +21,14 @@ export const GlobalImpact: React.FC<GlobalImpactProps> = React.memo(({ annualSav
   }, [annualSavingsKg, multiplier]);
 
   const presetScales = [
-    { label: 'Neighborhood', value: 1000 },
-    { label: 'Community', value: 10000 },
-    { label: 'City', value: 100000 },
-    { label: 'Nation', value: 1000000 },
+    { label: '1,000 Users', value: 1000 },
+    { label: '10,000 Users', value: 10000 },
+    { label: '100,000 Users', value: 100000 },
+    { label: '1,000,000 Users', value: 1000000 },
   ];
 
   return (
-    <div className="glass-panel border border-dark-border rounded-xl p-6 shadow-lg flex flex-col gap-6">
+    <div className="glass-panel border border-dark-border rounded-xl p-6 shadow-lg flex flex-col gap-6 w-full">
       <div className="flex justify-between items-center border-b border-dark-border pb-3">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Users className="h-5 w-5 text-brand-500" />
@@ -99,7 +99,7 @@ export const GlobalImpact: React.FC<GlobalImpactProps> = React.memo(({ annualSav
         <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
             <Leaf className="h-4 w-4 shrink-0" />
-            <span>Forest Equivalent</span>
+            <span>Trees Equivalent</span>
           </div>
           <p className="text-xl font-extrabold text-white mt-1">
             {impact.treesPlanted.toLocaleString()} Saplings
@@ -109,13 +109,13 @@ export const GlobalImpact: React.FC<GlobalImpactProps> = React.memo(({ annualSav
 
         <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
-            <ShieldAlert className="h-4 w-4 shrink-0" />
-            <span>Coal Avoided</span>
+            <Car className="h-4 w-4 shrink-0" />
+            <span>Cars Removed</span>
           </div>
           <p className="text-xl font-extrabold text-white mt-1">
-            {impact.coalBurnedAvoidedKg.toLocaleString()} kg
+            {impact.carsRemovedYearly.toLocaleString()} cars
           </p>
-          <span className="text-[9px] text-gray-500">equivalent coal combustion offset from grids</span>
+          <span className="text-[9px] text-gray-500">equivalent passenger vehicles removed/year</span>
         </div>
 
         <div className="rounded-lg bg-dark-card border border-dark-border p-3.5 flex flex-col gap-1">

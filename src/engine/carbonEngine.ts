@@ -8,6 +8,7 @@ export interface ScaledImpact {
   treesPlanted: number;
   coalBurnedAvoidedKg: number;
   homesPoweredYearly: number;
+  carsRemovedYearly: number;
 }
 
 /**
@@ -224,12 +225,14 @@ export function simulateGlobalImpact(
   const treesPlanted = Math.round((totalSavedKg / 22) * 10) / 10;
   const coalBurnedAvoidedKg = Math.round((totalSavedKg * 0.43) * 10) / 10;
   const homesPoweredYearly = Math.round((totalSavedKg / 7500) * 10) / 10;
+  const carsRemovedYearly = Math.round((totalSavedKg / 4600) * 10) / 10;
 
   return {
     co2SavedTons,
     treesPlanted,
     coalBurnedAvoidedKg,
     homesPoweredYearly,
+    carsRemovedYearly,
   };
 }
 
@@ -348,11 +351,13 @@ export function compareAgainstBenchmarks(
 ): {
   regionalAverage: number;
   globalAverage: number;
+  indiaAverage: number;
   percentileRank: number;
   comparisonRatio: number;
 } {
-  const regionalAverage = region === 'Europe' ? 6400 : region === 'Global' ? 4000 : 16000;
+  const regionalAverage = region === 'Europe' ? 6400 : region === 'Global' ? 4000 : region === 'India' ? 1900 : 16000;
   const globalAverage = 4000;
+  const indiaAverage = 1900;
   const comparisonRatio = Math.round((totalEmissions / regionalAverage) * 100) / 100;
   
   // High emissions means low percentile. Net zero means 99th percentile.
@@ -362,6 +367,7 @@ export function compareAgainstBenchmarks(
   return {
     regionalAverage,
     globalAverage,
+    indiaAverage,
     percentileRank,
     comparisonRatio,
   };
@@ -376,21 +382,40 @@ export function compareAgainstBenchmarks(
  */
 export function calculateNetZeroDate(
   currentTotalYearly: number,
-  annualSavings: number
+  annualSavings: number,
+  targetReductionPercent: number = 20
 ): {
   targetYear: number;
   yearsToNetZero: number;
   monthlyReductionNeeded: number;
+  currentEmissions: number;
+  targetReduction: number;
+  projectedNetZeroYear: number;
+  confidenceScore: number;
 } {
   const currentYear = new Date().getFullYear();
   const yearsToNetZero = annualSavings > 0 ? Math.max(1, Math.min(50, Math.round(currentTotalYearly / annualSavings))) : 50;
   const targetYear = currentYear + yearsToNetZero;
-  const targetYears = 10; // Standard climate horizon goal
-  const monthlyReductionNeeded = Math.round((currentTotalYearly / targetYears) / 12);
+  const monthlyReductionNeeded = Math.round((currentTotalYearly / 10) / 12);
+  const targetReduction = Math.round(currentTotalYearly * (targetReductionPercent / 100));
+
+  let confidenceScore = 95;
+  if (annualSavings === 0) {
+    confidenceScore = 15;
+  } else {
+    const ratio = annualSavings / (targetReduction || 1);
+    if (ratio < 0.5) confidenceScore = 45;
+    else if (ratio < 1.0) confidenceScore = 75;
+    else confidenceScore = 90 + Math.min(9, Math.round(ratio * 2));
+  }
 
   return {
     targetYear,
     yearsToNetZero,
     monthlyReductionNeeded,
+    currentEmissions: currentTotalYearly,
+    targetReduction,
+    projectedNetZeroYear: targetYear,
+    confidenceScore,
   };
 }

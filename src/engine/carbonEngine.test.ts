@@ -159,4 +159,124 @@ describe('Carbon Engine Core System', () => {
       expect(res.yearsToNetZero).toBe(50);
     });
   });
+
+  describe('9. Extended Benchmarking & Scaling Indicators', () => {
+    test('supports India Average (1900 kg) comparisons correctly', () => {
+      const res = compareAgainstBenchmarks(1900, 'India');
+      expect(res.regionalAverage).toBe(1900);
+      expect(res.indiaAverage).toBe(1900);
+      expect(res.comparisonRatio).toBe(1.0);
+    });
+
+    test('calculates correct ratio when emissions exceed India average', () => {
+      const res = compareAgainstBenchmarks(3800, 'India');
+      expect(res.comparisonRatio).toBe(2.0);
+    });
+
+    test('calculates correct ratio when emissions are below India average', () => {
+      const res = compareAgainstBenchmarks(950, 'India');
+      expect(res.comparisonRatio).toBe(0.5);
+    });
+
+    test('caps percentile rankings correctly for extremely low footprints vs India average', () => {
+      const res = compareAgainstBenchmarks(100, 'India');
+      expect(res.percentileRank).toBe(97);
+    });
+
+    test('caps percentile rankings correctly for extremely high footprints vs India average', () => {
+      const res = compareAgainstBenchmarks(10000, 'India');
+      expect(res.percentileRank).toBe(5);
+    });
+
+    test('handles default regional average as US (16000 kg)', () => {
+      const res = compareAgainstBenchmarks(8000);
+      expect(res.regionalAverage).toBe(16000);
+      expect(res.comparisonRatio).toBe(0.5);
+    });
+
+    test('global impact scaling outputs at exactly 1,000 users', () => {
+      const res = simulateGlobalImpact(1, 1000);
+      expect(res.co2SavedTons).toBe(1);
+      expect(res.carsRemovedYearly).toBeCloseTo(1000 / 4600, 1);
+    });
+
+    test('global impact scaling outputs at exactly 10,000 users', () => {
+      const res = simulateGlobalImpact(1, 10000);
+      expect(res.co2SavedTons).toBe(10);
+      expect(res.carsRemovedYearly).toBeCloseTo(10000 / 4600, 1);
+    });
+
+    test('global impact scaling outputs at exactly 100,000 users', () => {
+      const res = simulateGlobalImpact(1, 100000);
+      expect(res.co2SavedTons).toBe(100);
+      expect(res.carsRemovedYearly).toBeCloseTo(100000 / 4600, 1);
+    });
+
+    test('global impact scaling outputs at exactly 1,000,000 users', () => {
+      const res = simulateGlobalImpact(1, 1000000);
+      expect(res.co2SavedTons).toBe(1000);
+      expect(res.carsRemovedYearly).toBeCloseTo(1000000 / 4600, 1);
+    });
+
+    test('verifies carsRemovedYearly is directly proportional to savings', () => {
+      const res1 = simulateGlobalImpact(1000, 10000);
+      const res2 = simulateGlobalImpact(2000, 10000);
+      expect(res2.carsRemovedYearly).toBe(res1.carsRemovedYearly * 2);
+    });
+  });
+
+  describe('10. Net-Zero Date Forecast Details & Confidence Metrics', () => {
+    test('projected net-zero target calculation for standard target reduction percentage (30%)', () => {
+      const res = calculateNetZeroDate(10000, 3000, 30);
+      expect(res.currentEmissions).toBe(10000);
+      expect(res.targetReduction).toBe(3000);
+      expect(res.projectedNetZeroYear).toBe(new Date().getFullYear() + 3);
+    });
+
+    test('projected net-zero target calculation for high target reduction percentage (50%)', () => {
+      const res = calculateNetZeroDate(10000, 2000, 50);
+      expect(res.targetReduction).toBe(5000);
+      expect(res.projectedNetZeroYear).toBe(new Date().getFullYear() + 5);
+    });
+
+    test('confidence score is extremely low (15%) when annual savings is zero', () => {
+      const res = calculateNetZeroDate(10000, 0, 30);
+      expect(res.confidenceScore).toBe(15);
+    });
+
+    test('confidence score is low (45%) when savings are less than half the target reduction', () => {
+      const res = calculateNetZeroDate(10000, 1000, 30);
+      expect(res.confidenceScore).toBe(45);
+    });
+
+    test('confidence score is moderate (75%) when savings are close but less than target reduction', () => {
+      const res = calculateNetZeroDate(10000, 2500, 30);
+      expect(res.confidenceScore).toBe(75);
+    });
+
+    test('confidence score is high (90%+) when savings meet target reduction', () => {
+      const res = calculateNetZeroDate(10000, 3000, 30); // target is 3000
+      expect(res.confidenceScore).toBe(92);
+    });
+
+    test('confidence score increases further when savings double the target reduction', () => {
+      const res = calculateNetZeroDate(10000, 6000, 30);
+      expect(res.confidenceScore).toBe(94);
+    });
+
+    test('monthly reduction needed estimates standard 10-year Net Zero path', () => {
+      const res = calculateNetZeroDate(12000, 1200, 30);
+      expect(res.monthlyReductionNeeded).toBe(100);
+    });
+
+    test('confidence score is capped near 99% for massive savings rates', () => {
+      const res = calculateNetZeroDate(10000, 25000, 30);
+      expect(res.confidenceScore).toBe(99);
+    });
+
+    test('net-zero projected year caps at currentYear + 50 for negative or slow paths', () => {
+      const res = calculateNetZeroDate(10000, -100, 30);
+      expect(res.projectedNetZeroYear).toBe(new Date().getFullYear() + 50);
+    });
+  });
 });
