@@ -1,15 +1,63 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// Zod Input Verification Schema
+const GeminiRequestSchema = z.object({
+  prompt: z.string().min(1, 'Prompt is required'),
+  type: z.enum(['chat', 'plan', 'analysis']).optional().default('chat'),
+  footprintData: z.record(z.string(), z.number()).optional().nullable(),
+});
+
+// Sliding-window in-memory IP rate limiter
+const ipCache = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS = 20; // max 20 calls per minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const limit = ipCache.get(ip);
+  if (!limit) {
+    ipCache.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (now > limit.resetTime) {
+    ipCache.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (limit.count >= MAX_REQUESTS) {
+    return false;
+  }
+  limit.count++;
+  return true;
+}
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { prompt, type, footprintData } = body;
+    // 1. Rate Limiting Check
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
 
+    // 2. Validate all API inputs using Zod
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = GeminiRequestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid request payload', details: parseResult.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { prompt, type, footprintData } = parseResult.data;
     const apiKey = process.env.GEMINI_API_KEY;
     const isSimulation = process.env.NEXT_PUBLIC_SIMULATION_MODE === 'true' || !apiKey || apiKey === 'mock_gemini_api_key';
 
     if (isSimulation) {
-      // Simulate Gemini Response based on the "type" parameter
       return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData));
     }
 
@@ -21,13 +69,13 @@ export async function POST(request: Request) {
     let responseMimeType = "text/plain";
 
     if (type === 'plan') {
-      systemContext += "Your job is to generate a custom 4-week carbon reduction plan in JSON format. The response must follow this strict JSON schema: { weeks: [ { weekNumber: number, tasks: [ { action: string, expectedSavings: number (in kg CO2e/week), difficulty: 'Easy'|'Medium'|'Hard' } ] } ] }";
+      systemContext += "Your job is to generate a custom 4-week carbon reduction plan in JSON format. The response must follow this strict JSON schema: { weeks: [ { weekNumber: number, tasks: [ { action: string, expectedSavings: number (in kg CO2e/week), difficulty: 'Easy'|'Medium'|'Hard' } ] } ] }. The tasks must be highly specific, tailored to the user's footprint breakdown, and cover different areas (Transport, Energy, Food, Waste) each week. Avoid generic suggestions. Focus on high-impact, practical actions matching the user's highest emissions areas.";
       responseMimeType = "application/json";
     } else if (type === 'analysis') {
-      systemContext += "Analyze the user's carbon footprint breakdown and provide a detailed analysis of major contributors and structural recommendations in JSON. Schema: { analysis: string, priorityArea: string, potentialSavings: number }";
+      systemContext += "Analyze the user's carbon footprint breakdown and provide a detailed analysis of major contributors and structural recommendations in JSON. Schema: { analysis: string, priorityArea: string, potentialSavings: number }. Your analysis must explain exactly why the contributor is high, provide concrete, numbered recommendations, and suggest local actions (like switching utilities, EV conversions, or composting).";
       responseMimeType = "application/json";
     } else {
-      systemContext += "Respond to user questions regarding sustainability, energy savings, eco-friendly transport, diets, and waste reduction. Be extremely motivating, supportive, and provide estimated carbon savings where possible.";
+      systemContext += "Respond to user questions regarding sustainability, energy savings, eco-friendly transport, diets, and waste reduction. Be extremely motivating, supportive, and provide estimated carbon savings where possible. Refer back to their carbon breakdown statistics if available to make your answers personalized and contextualized.";
     }
 
     const payload = {
@@ -64,7 +112,6 @@ export async function POST(request: Request) {
         return NextResponse.json(jsonParsed);
       } catch (err) {
         console.error("Gemini failed to output valid JSON. Output was:", rawText, err);
-        // Fallback to mock if parsing fails
         return NextResponse.json(generateMockGeminiResponse(type, prompt, footprintData));
       }
     }
@@ -88,10 +135,10 @@ function generateMockGeminiResponse(
   prompt: string, 
   footprintData: Record<string, number> | null | undefined
 ) {
-  const transportEmissions = footprintData?.transport || 4500;
-  const energyEmissions = footprintData?.energy || 3200;
-  const foodEmissions = footprintData?.food || 2500;
-  const wasteEmissions = footprintData?.waste || 800;
+  const transportEmissions = footprintData?.transport || 5200;
+  const energyEmissions = footprintData?.energy || 4500;
+  const foodEmissions = footprintData?.food || 3500;
+  const wasteEmissions = footprintData?.waste || 2800;
 
   if (type === 'plan') {
     return {
@@ -101,15 +148,17 @@ function generateMockGeminiResponse(
           tasks: [
             {
               id: 'task-w1-1',
-              action: 'Reduce car travel by walking or cycling for journeys under 2 miles',
-              expectedSavings: Math.round(transportEmissions * 0.05 / 4), // 5% transport savings weekly
+              action: transportEmissions > 2000
+                ? 'Transition to train or electric bus commuting for trips exceeding 5 miles'
+                : 'Combine errand trips and optimize route schedules to save vehicle mileage',
+              expectedSavings: Math.round((transportEmissions * 0.08) / 4),
               difficulty: 'Easy',
               completed: false,
             },
             {
               id: 'task-w1-2',
-              action: 'Unplug idle electronics and turn off standby mode (Vampire power)',
-              expectedSavings: Math.round(energyEmissions * 0.02 / 4), // 2% energy savings
+              action: 'Audit household appliances and unplug vampire loads during sleeping hours',
+              expectedSavings: Math.round((energyEmissions * 0.03) / 4),
               difficulty: 'Easy',
               completed: false,
             }
@@ -120,15 +169,17 @@ function generateMockGeminiResponse(
           tasks: [
             {
               id: 'task-w2-1',
-              action: 'Implement "Meatless Mondays" (adopt plant-based meals one day per week)',
-              expectedSavings: Math.round(foodEmissions * 0.15 / 4), // 15% food savings weekly
+              action: foodEmissions > 1500
+                ? 'Adopt meat-free lunches on weekdays (incorporate lentils, beans, and grains)'
+                : 'Reduce dairy milk consumption and select oat or almond replacements',
+              expectedSavings: Math.round((foodEmissions * 0.12) / 4),
               difficulty: 'Easy',
               completed: false,
             },
             {
               id: 'task-w2-2',
-              action: 'Set thermostat 2 degrees cooler in winter or 2 degrees warmer in summer',
-              expectedSavings: Math.round(energyEmissions * 0.08 / 4), // 8% energy savings
+              action: 'Adjust smart thermostat heating controls down by 2°F during winter peak months',
+              expectedSavings: Math.round((energyEmissions * 0.07) / 4),
               difficulty: 'Medium',
               completed: false,
             }
@@ -139,15 +190,17 @@ function generateMockGeminiResponse(
           tasks: [
             {
               id: 'task-w3-1',
-              action: 'Use public transit or carpool for commuting instead of solo driving twice a week',
-              expectedSavings: Math.round(transportEmissions * 0.15 / 4), // 15% transport savings
+              action: transportEmissions > 3000
+                ? 'Replace a solo drive commute with public transit or walking twice per week'
+                : 'Keep car tires inflated to optimal pressure to improve fuel mileage efficiency',
+              expectedSavings: Math.round((transportEmissions * 0.12) / 4),
               difficulty: 'Medium',
               completed: false,
             },
             {
               id: 'task-w3-2',
-              action: 'Replace five most used incandescent light bulbs with ENERGY STAR certified LEDs',
-              expectedSavings: Math.round(energyEmissions * 0.04 / 4), // 4% energy savings
+              action: 'Swap five highly active incandescent lighting fixtures for energy saver LEDs',
+              expectedSavings: Math.round((energyEmissions * 0.05) / 4),
               difficulty: 'Easy',
               completed: false,
             }
@@ -158,15 +211,17 @@ function generateMockGeminiResponse(
           tasks: [
             {
               id: 'task-w4-1',
-              action: 'Optimize waste: implement strict compost separation of organic waste',
-              expectedSavings: Math.round(wasteEmissions * 0.3 / 4), // 30% waste savings
+              action: wasteEmissions > 1000
+                ? 'Introduce kitchen organic composting bins to divert waste organic scraps'
+                : 'Purchase products in bulk packaging and refuse single-use coffee cups',
+              expectedSavings: Math.round((wasteEmissions * 0.25) / 4),
               difficulty: 'Medium',
               completed: false,
             },
             {
               id: 'task-w4-2',
-              action: 'Lower water heater temperature setting to 120°F (49°C)',
-              expectedSavings: Math.round(energyEmissions * 0.05 / 4), // 5% energy savings
+              action: 'Configure home water heater tank temperature settings strictly down to 120°F',
+              expectedSavings: Math.round((energyEmissions * 0.05) / 4),
               difficulty: 'Easy',
               completed: false,
             }

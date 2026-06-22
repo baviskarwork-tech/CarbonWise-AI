@@ -6,6 +6,7 @@ import { calculateSimulatedEmissions } from '../../utils/prediction';
 import { formatCarbon, formatPercent } from '../../utils/formatters';
 import { NATIONAL_AVERAGES } from '../../constants';
 import { Sliders, Leaf, ShieldAlert, Compass } from 'lucide-react';
+import { GlobalImpact } from '../../components/GlobalImpact';
 
 export default function SimulatorPage() {
   const { footprints, unlockBadge, currentUser } = useCarbonStore();
@@ -210,6 +211,9 @@ export default function SimulatorPage() {
               </div>
             </div>
           </div>
+
+          {/* Global Impact Scaler */}
+          <GlobalImpact annualSavingsKg={sim.annualSavings} />
         </div>
       </div>
     </div>

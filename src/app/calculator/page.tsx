@@ -71,7 +71,7 @@ function CalculatorForm() {
 
     // Make a schema subset for validation
     const partialSchema = CalculatorSchema.pick(
-      fieldsToValidate.reduce((acc, f) => ({ ...acc, [f]: true }), {}) as any
+      fieldsToValidate.reduce((acc, f) => ({ ...acc, [f]: true }), {} as Record<string, boolean>) as unknown as Parameters<typeof CalculatorSchema.pick>[0]
     );
 
     const result = partialSchema.safeParse(stepInputs);
@@ -136,7 +136,14 @@ function CalculatorForm() {
       </div>
 
       {/* Progress Steps Indicators */}
-      <div className="grid grid-cols-4 border border-dark-border bg-dark-card rounded-xl overflow-hidden text-center divide-x divide-dark-border text-xs md:text-sm">
+      <div 
+        className="grid grid-cols-4 border border-dark-border bg-dark-card rounded-xl overflow-hidden text-center divide-x divide-dark-border text-xs md:text-sm"
+        role="progressbar"
+        aria-label="Calculator progress"
+        aria-valuenow={step}
+        aria-valuemin={1}
+        aria-valuemax={4}
+      >
         {stepsInfo.map((item, index) => {
           const Icon = item.icon;
           const stepNum = index + 1;
@@ -149,8 +156,10 @@ function CalculatorForm() {
               className={`p-3 md:p-4 flex flex-col items-center justify-center gap-1.5 transition-colors ${
                 isActive ? 'bg-brand-950/30 text-brand-500' : isCompleted ? 'text-emerald-600' : 'text-gray-500'
               }`}
+              aria-current={isActive ? 'step' : undefined}
+              aria-label={`Step ${stepNum} of 4: ${item.title}${isCompleted ? ' (Completed)' : isActive ? ' (Active)' : ''}`}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5" aria-hidden="true" />
               <span className="font-semibold">{item.title}</span>
             </div>
           );
@@ -193,8 +202,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.carMileage === 0 ? '' : inputs.carMileage}
                       onChange={(e) => handleInputChange('carMileage', e.target.value)}
+                      aria-invalid={!!errors.carMileage}
+                      aria-describedby={errors.carMileage ? 'carMileage-error' : undefined}
                     />
-                    {errors.carMileage && <span className="mt-1 text-xs text-rose-400">{errors.carMileage}</span>}
+                    {errors.carMileage && <span id="carMileage-error" className="mt-1 text-xs text-rose-400">{errors.carMileage}</span>}
                   </div>
 
                   <div>
@@ -207,8 +218,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.carEfficiency === 0 ? '' : inputs.carEfficiency}
                       onChange={(e) => handleInputChange('carEfficiency', e.target.value)}
+                      aria-invalid={!!errors.carEfficiency}
+                      aria-describedby={errors.carEfficiency ? 'carEfficiency-error' : undefined}
                     />
-                    {errors.carEfficiency && <span className="mt-1 text-xs text-rose-400">{errors.carEfficiency}</span>}
+                    {errors.carEfficiency && <span id="carEfficiency-error" className="mt-1 text-xs text-rose-400">{errors.carEfficiency}</span>}
                   </div>
 
                   <div>
@@ -221,8 +234,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.flightsShort === 0 ? '' : inputs.flightsShort}
                       onChange={(e) => handleInputChange('flightsShort', e.target.value)}
+                      aria-invalid={!!errors.flightsShort}
+                      aria-describedby={errors.flightsShort ? 'flightsShort-error' : undefined}
                     />
-                    {errors.flightsShort && <span className="mt-1 text-xs text-rose-400">{errors.flightsShort}</span>}
+                    {errors.flightsShort && <span id="flightsShort-error" className="mt-1 text-xs text-rose-400">{errors.flightsShort}</span>}
                   </div>
 
                   <div>
@@ -235,8 +250,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.flightsLong === 0 ? '' : inputs.flightsLong}
                       onChange={(e) => handleInputChange('flightsLong', e.target.value)}
+                      aria-invalid={!!errors.flightsLong}
+                      aria-describedby={errors.flightsLong ? 'flightsLong-error' : undefined}
                     />
-                    {errors.flightsLong && <span className="mt-1 text-xs text-rose-400">{errors.flightsLong}</span>}
+                    {errors.flightsLong && <span id="flightsLong-error" className="mt-1 text-xs text-rose-400">{errors.flightsLong}</span>}
                   </div>
 
                   <div className="md:col-span-2">
@@ -249,8 +266,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.publicTransportHours === 0 ? '' : inputs.publicTransportHours}
                       onChange={(e) => handleInputChange('publicTransportHours', e.target.value)}
+                      aria-invalid={!!errors.publicTransportHours}
+                      aria-describedby={errors.publicTransportHours ? 'publicTransportHours-error' : undefined}
                     />
-                    {errors.publicTransportHours && <span className="mt-1 text-xs text-rose-400">{errors.publicTransportHours}</span>}
+                    {errors.publicTransportHours && <span id="publicTransportHours-error" className="mt-1 text-xs text-rose-400">{errors.publicTransportHours}</span>}
                   </div>
                 </div>
               </motion.div>
@@ -282,8 +301,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.electricityBill === 0 ? '' : inputs.electricityBill}
                       onChange={(e) => handleInputChange('electricityBill', e.target.value)}
+                      aria-invalid={!!errors.electricityBill}
+                      aria-describedby={errors.electricityBill ? 'electricityBill-error' : undefined}
                     />
-                    {errors.electricityBill && <span className="mt-1 text-xs text-rose-400">{errors.electricityBill}</span>}
+                    {errors.electricityBill && <span id="electricityBill-error" className="mt-1 text-xs text-rose-400">{errors.electricityBill}</span>}
                   </div>
 
                   <div>
@@ -296,8 +317,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.gasBill === 0 ? '' : inputs.gasBill}
                       onChange={(e) => handleInputChange('gasBill', e.target.value)}
+                      aria-invalid={!!errors.gasBill}
+                      aria-describedby={errors.gasBill ? 'gasBill-error' : undefined}
                     />
-                    {errors.gasBill && <span className="mt-1 text-xs text-rose-400">{errors.gasBill}</span>}
+                    {errors.gasBill && <span id="gasBill-error" className="mt-1 text-xs text-rose-400">{errors.gasBill}</span>}
                   </div>
                 </div>
 
@@ -336,8 +359,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.meatDays === 0 ? '' : inputs.meatDays}
                       onChange={(e) => handleInputChange('meatDays', e.target.value)}
+                      aria-invalid={!!errors.meatDays}
+                      aria-describedby={errors.meatDays ? 'meatDays-error' : undefined}
                     />
-                    {errors.meatDays && <span className="mt-1 text-xs text-rose-400">{errors.meatDays}</span>}
+                    {errors.meatDays && <span id="meatDays-error" className="mt-1 text-xs text-rose-400">{errors.meatDays}</span>}
                   </div>
 
                   <div>
@@ -350,8 +375,10 @@ function CalculatorForm() {
                       className="w-full rounded-lg border border-dark-border bg-dark-card py-2 px-3 text-sm text-white focus:border-brand-500 focus:outline-none"
                       value={inputs.dairyDays === 0 ? '' : inputs.dairyDays}
                       onChange={(e) => handleInputChange('dairyDays', e.target.value)}
+                      aria-invalid={!!errors.dairyDays}
+                      aria-describedby={errors.dairyDays ? 'dairyDays-error' : undefined}
                     />
-                    {errors.dairyDays && <span className="mt-1 text-xs text-rose-400">{errors.dairyDays}</span>}
+                    {errors.dairyDays && <span id="dairyDays-error" className="mt-1 text-xs text-rose-400">{errors.dairyDays}</span>}
                   </div>
                 </div>
               </motion.div>
@@ -385,10 +412,12 @@ function CalculatorForm() {
                       className="w-full accent-brand-500 bg-dark-card h-2 rounded-lg cursor-pointer border border-dark-border"
                       value={inputs.recyclingRate}
                       onChange={(e) => handleInputChange('recyclingRate', e.target.value)}
+                      aria-invalid={!!errors.recyclingRate}
+                      aria-describedby={errors.recyclingRate ? 'recyclingRate-error' : undefined}
                     />
                     <span className="w-12 text-sm font-bold text-brand-500 text-right">{inputs.recyclingRate}%</span>
                   </div>
-                  {errors.recyclingRate && <span className="mt-1 text-xs text-rose-400">{errors.recyclingRate}</span>}
+                  {errors.recyclingRate && <span id="recyclingRate-error" className="mt-1 text-xs text-rose-400">{errors.recyclingRate}</span>}
                 </div>
 
                 <div className="flex items-start gap-2.5 rounded-lg bg-slate-900/40 p-4 border border-dark-border/60">

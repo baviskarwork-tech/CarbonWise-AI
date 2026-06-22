@@ -66,9 +66,9 @@ describe('Gemini AI Coach API Endpoint', () => {
     const res = await POST(req);
     const data = await res.json();
     
-    // Week 1 task 2 is energy standby task. It saves energy * 0.02 / 4 = 10000 * 0.02 / 4 = 50 kg.
-    const energyTask = data.weeks[0].tasks.find((t: { action: string; expectedSavings: number }) => t.action.includes('electronics'));
-    expect(energyTask?.expectedSavings).toBe(50);
+    // Week 1 task 2 is energy standby task. It saves energy * 0.03 / 4 = 10000 * 0.03 / 4 = 75 kg.
+    const energyTask = data.weeks[0].tasks.find((t: { action: string; expectedSavings: number }) => t.action.includes('appliances'));
+    expect(energyTask?.expectedSavings).toBe(75);
   });
 
   test('5. generates analysis summaries when type is analysis', async () => {
@@ -147,7 +147,7 @@ describe('Gemini AI Coach API Endpoint', () => {
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(400);
     const data = await res.json();
     expect(data).toHaveProperty('error');
   });

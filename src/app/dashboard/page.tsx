@@ -7,6 +7,7 @@ import AuthRoute from '../../components/AuthRoute';
 import { calculateSustainabilityScore, getGradeBadgeColor } from '../../utils/score';
 import { formatCarbon, formatDate } from '../../utils/formatters';
 import { BADGES } from '../../constants';
+import { Benchmarking } from '../../components/Benchmarking';
 import { 
   Award, 
   Leaf, 
@@ -215,7 +216,7 @@ function DashboardView() {
             const pct = Math.round((amount / latestFootprint.totalEmissions) * 100) || 0;
             
             // Premium category metadata mapping
-            const meta: Record<string, { color: string; icon: any; label: string }> = {
+            const meta: Record<string, { color: string; icon: React.ComponentType<{ className?: string }>; label: string }> = {
               transport: { color: 'bg-cyan-500', icon: Car, label: 'Transport' },
               energy: { color: 'bg-amber-500', icon: Zap, label: 'Utilities' },
               food: { color: 'bg-emerald-500', icon: ChefHat, label: 'Diet & Food' },
@@ -249,6 +250,9 @@ function DashboardView() {
           })}
         </div>
       </div>
+
+      {/* Benchmarking Comparison System */}
+      <Benchmarking totalEmissionsKg={latestFootprint.totalEmissions} />
 
       {/* Weekly Plan & Badge System Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

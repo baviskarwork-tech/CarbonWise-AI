@@ -27,6 +27,11 @@ import { Firestore } from 'firebase/firestore';
 let auth: Auth;
 let db: Firestore;
 
+interface FirestoreDoc {
+  id: string;
+  data: () => Record<string, unknown>;
+}
+
 if (!isSimulation) {
   try {
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -299,7 +304,7 @@ export const databaseService = {
         orderBy('calculatedAt', 'desc')
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id } as CarbonFootprint));
+      return snapshot.docs.map((d: FirestoreDoc) => ({ ...d.data() as unknown as CarbonFootprint, id: d.id }));
     }
   },
 
@@ -347,7 +352,7 @@ export const databaseService = {
     } else {
       const q = query(collection(db, 'goals'), where('userId', '==', userId));
       const snapshot = await getDocs(q);
-      const goals = snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id } as Goal));
+      const goals = snapshot.docs.map((d: FirestoreDoc) => ({ ...d.data() as unknown as Goal, id: d.id }));
       return goals;
     }
   },
@@ -382,7 +387,7 @@ export const databaseService = {
     } else {
       const q = query(collection(db, 'achievements'), where('userId', '==', userId));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((d: any) => d.data() as Achievement);
+      return snapshot.docs.map((d: FirestoreDoc) => d.data() as unknown as Achievement);
     }
   },
 

@@ -1,70 +1,16 @@
 import { CarbonBreakdown } from '../types';
-import { NATIONAL_AVERAGES } from '../constants';
-
-export type SustainabilityGrade = 'Poor' | 'Average' | 'Good' | 'Excellent';
+import { computeSustainabilityScore as engineCompute, SustainabilityGrade } from '../engine/carbonEngine';
 
 /**
  * Calculates a sustainability score from 0 to 100 based on carbon emissions.
- * Compares actual footprint to regional baselines.
+ * Wrapper calling src/engine/carbonEngine.ts.
  */
-export function calculateSustainabilityScore(breakdown: CarbonBreakdown): {
-  score: number;
-  grade: SustainabilityGrade;
-  breakdownScores: {
-    transport: number;
-    energy: number;
-    food: number;
-    waste: number;
-  };
-} {
-  // Sector scores: 100 is net-zero, 50 is national average baseline.
-  // Formula: score = Math.max(0, Math.min(100, 100 - (actual / average) * 50))
-  // If actual is 0, score is 100. If actual equals average, score is 50. If actual is double average, score is 0.
-  
-  const transportScore = Math.round(
-    Math.max(0, Math.min(100, 100 - (breakdown.transport / NATIONAL_AVERAGES.TRANSPORT) * 50))
-  );
-  
-  const energyScore = Math.round(
-    Math.max(0, Math.min(100, 100 - (breakdown.energy / NATIONAL_AVERAGES.ENERGY) * 50))
-  );
-  
-  const foodScore = Math.round(
-    Math.max(0, Math.min(100, 100 - (breakdown.food / NATIONAL_AVERAGES.FOOD) * 50))
-  );
-  
-  const wasteScore = Math.round(
-    Math.max(0, Math.min(100, 100 - (breakdown.waste / NATIONAL_AVERAGES.WASTE) * 50))
-  );
-
-  const averageScore = Math.round((transportScore + energyScore + foodScore + wasteScore) / 4);
-  const score = Math.max(0, Math.min(100, averageScore));
-
-  let grade: SustainabilityGrade = 'Average';
-  if (score >= 80) {
-    grade = 'Excellent';
-  } else if (score >= 60) {
-    grade = 'Good';
-  } else if (score >= 40) {
-    grade = 'Average';
-  } else {
-    grade = 'Poor';
-  }
-
-  return {
-    score,
-    grade,
-    breakdownScores: {
-      transport: transportScore,
-      energy: energyScore,
-      food: foodScore,
-      waste: wasteScore,
-    },
-  };
+export function calculateSustainabilityScore(breakdown: CarbonBreakdown) {
+  return engineCompute(breakdown);
 }
 
 /**
- * Get color scheme classes for a given score/grade (useful for tailwind badges)
+ * Get color scheme classes for a given score/grade (UI styling helper).
  */
 export function getGradeBadgeColor(grade: SustainabilityGrade): string {
   switch (grade) {
